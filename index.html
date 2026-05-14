@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Parking IA Express</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
 
@@ -88,13 +90,6 @@ button:hover{
     border:2px solid #ddd;
 }
 
-.estado{
-    margin-top:15px;
-    text-align:center;
-    font-weight:bold;
-    color:#16a34a;
-}
-
 .aviso{
     margin-top:15px;
     background:#f1f5f9;
@@ -124,6 +119,16 @@ button:hover{
 
 .print{
     background:#111827;
+}
+
+#qrContainer{
+    margin-top:25px;
+    text-align:center;
+    display:none;
+}
+
+#qrCanvas{
+    margin-top:15px;
 }
 
 @media print{
@@ -163,13 +168,16 @@ Registro inteligente de estacionamiento
 
 <!-- DATOS -->
 
-<input type="text"
+<input
+type="text"
 id="nombre"
 placeholder="Nombre del cliente">
 
-<input type="tel"
+<input
+type="tel"
 id="telefono"
-placeholder="Número telefónico">
+placeholder="Número telefónico"
+inputmode="numeric">
 
 <select id="unidad">
 
@@ -209,30 +217,13 @@ style="display:none;">
 
 </div>
 
-<input type="text"
+<input
+type="text"
 id="placas"
-placeholder="Ingresar Placas">
+placeholder="Ingresar número de placas">
 
 <!-- BOTONES -->
-<!-- BOTON WHATSAPP CLIENTE -->
 
-<button
-class="no-print"
-onclick="enviarCliente()">
-
-📲 Enviar Ticket Cliente
-
-</button>
-
-<!-- BOTON TELEGRAM ADMIN -->
-
-<button
-class="no-print"
-onclick="enviarAdmin()">
-
-📨 Enviar Registro Admin
-
-</button>
 <button
 class="no-print"
 onclick="generarTicket()">
@@ -251,36 +242,30 @@ onclick="window.print()">
 
 <button
 class="no-print"
-onclick="enviarWhatsApp()">
-
-📲 Enviar Registro WhatsApp
-
-</button>
-    
-<button
-class="no-print"
 onclick="generarQRPagina()">
 
 📱 Generar QR Página
 
 </button>
+
+<button
+class="no-print"
+onclick="enviarCliente()">
+
+📲 Enviar Ticket Cliente
+
+</button>
+
+<button
+class="no-print"
+onclick="enviarAdmin()">
+
+📨 Enviar Registro Admin
+
+</button>
+
 <!-- TICKET -->
-    
-<div
-id="qrContainer"
-style="
-margin-top:20px;
-text-align:center;
-display:none;
-">
 
-<h3>
-📱 QR de Acceso
-</h3>
-
-<canvas id="qrCanvas"></canvas>
-
-</div>
 <div
 class="ticket"
 id="ticket"
@@ -290,29 +275,53 @@ style="display:none;">
 
 <hr>
 
-<p><strong>FOLIO:</strong>
-<span id="tFolio"></span></p>
+<p>
+<strong>FOLIO:</strong>
+<span id="tFolio"></span>
+</p>
 
-<p><strong>CLIENTE:</strong>
-<span id="tNombre"></span></p>
+<p>
+<strong>CLIENTE:</strong>
+<span id="tNombre"></span>
+</p>
 
-<p><strong>TELÉFONO:</strong>
-<span id="tTelefono"></span></p>
+<p>
+<strong>TELÉFONO:</strong>
+<span id="tTelefono"></span>
+</p>
 
-<p><strong>UNIDAD:</strong>
-<span id="tUnidad"></span></p>
+<p>
+<strong>UNIDAD:</strong>
+<span id="tUnidad"></span>
+</p>
 
-<p><strong>PLACAS:</strong>
-<span id="tPlacas"></span></p>
+<p>
+<strong>PLACAS:</strong>
+<span id="tPlacas"></span>
+</p>
 
-<p><strong>FECHA:</strong>
-<span id="tFecha"></span></p>
+<p>
+<strong>FECHA:</strong>
+<span id="tFecha"></span>
+</p>
 
 <hr>
 
 <p style="text-align:center;">
 Conserve su ticket
 </p>
+
+</div>
+
+<!-- QR -->
+
+<div id="qrContainer">
+
+<h3>
+📱 QR DE ACCESO
+</h3>
+
+<canvas id="qrCanvas"></canvas>
 
 </div>
 
@@ -340,7 +349,7 @@ function actualizarFecha(){
 
 actualizarFecha();
 
-// FOTO
+// FOTO PREVIEW
 const foto =
 document.getElementById("foto");
 
@@ -407,13 +416,127 @@ function generarFolio(){
 
 }
 
-// TICKET
-    // ENVIAR TICKET CLIENTE
+// GENERAR TICKET
+function generarTicket(){
+
+    const nombre =
+    document.getElementById("nombre")
+    .value;
+
+    const telefono =
+    document.getElementById("telefono")
+    .value;
+
+    const unidad =
+    document.getElementById("unidad")
+    .value;
+
+    const placas =
+    document.getElementById("placas")
+    .value;
+
+    if(nombre === "" ||
+       telefono === "" ||
+       unidad === "" ||
+       placas === ""){
+
+        alert(
+        "Completa todos los campos"
+        );
+
+        return;
+
+    }
+
+    const fecha =
+    new Date().toLocaleString();
+
+    const folio =
+    generarFolio();
+
+    document.getElementById("ticket")
+    .style.display = "block";
+
+    document.getElementById("tFolio")
+    .innerHTML = folio;
+
+    document.getElementById("tNombre")
+    .innerHTML = nombre;
+
+    document.getElementById("tTelefono")
+    .innerHTML = telefono;
+
+    document.getElementById("tUnidad")
+    .innerHTML = unidad;
+
+    document.getElementById("tPlacas")
+    .innerHTML = placas;
+
+    document.getElementById("tFecha")
+    .innerHTML = fecha;
+
+}
+
+// QR PAGINA
+function generarQRPagina(){
+
+    const url =
+    "https://parkingia.pages.dev/";
+
+    const qrContainer =
+    document.getElementById("qrContainer");
+
+    const canvas =
+    document.getElementById("qrCanvas");
+
+    qrContainer.style.display =
+    "block";
+
+    const ctx =
+    canvas.getContext("2d");
+
+    ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+    );
+
+    QRCode.toCanvas(
+
+        canvas,
+
+        url,
+
+        {
+            width:250
+        },
+
+        function(error){
+
+            if(error){
+
+                console.error(error);
+
+                alert(
+                "Error al generar QR"
+                );
+
+            }
+
+        }
+
+    );
+
+}
+
+// WHATSAPP CLIENTE
 function enviarCliente(){
 
     const telefonoCliente =
     document.getElementById("telefono")
     .value
+    .toString()
     .replace(/\D/g,'');
 
     const unidad =
@@ -471,7 +594,8 @@ ${fecha}%0A%0A
 );
 
 }
-    // ENVIAR ADMIN TELEGRAM
+
+// TELEGRAM ADMIN
 async function enviarAdmin(){
 
     const nombre =
@@ -512,13 +636,13 @@ async function enviarAdmin(){
 
     }
 
-    // TOKEN BOT TELEGRAM
+    // TOKEN TELEGRAM
     const token =
-    "TU_TOKEN_BOT";
+    "";
 
-    // CHAT ID ADMIN
+    // CHAT ID
     const chatId =
-    "TU_CHAT_ID";
+    "";
 
     const mensaje =
 
