@@ -7,8 +7,6 @@
 
 <title>Parking IA Express</title>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-
 <style>
 
 *{
@@ -213,21 +211,28 @@ style="display:none;">
 
 <input type="text"
 id="placas"
-placeholder="Placas detectadas automáticamente">
-
-<div class="estado"
-id="estado"></div>
+placeholder="Ingresar Placas">
 
 <!-- BOTONES -->
+<!-- BOTON WHATSAPP CLIENTE -->
 
 <button
 class="no-print"
-onclick="leerPlacas()">
+onclick="enviarCliente()">
 
-🔍 Escanear placas con IA
+📲 Enviar Ticket Cliente
 
 </button>
 
+<!-- BOTON TELEGRAM ADMIN -->
+
+<button
+class="no-print"
+onclick="enviarAdmin()">
+
+📨 Enviar Registro Admin
+
+</button>
 <button
 class="no-print"
 onclick="generarTicket()">
@@ -346,49 +351,6 @@ foto.addEventListener("change",function(){
 
 });
 
-// IA OCR
-async function leerPlacas(){
-
-    const archivo =
-    foto.files[0];
-
-    if(!archivo){
-
-        alert(
-        "Toma una foto primero"
-        );
-
-        return;
-
-    }
-
-    document.getElementById("estado")
-    .innerHTML =
-    "Escaneando placas...";
-
-    const result =
-    await Tesseract.recognize(
-    archivo,
-    'eng'
-    );
-
-    let texto =
-    result.data.text;
-
-    texto = texto
-    .replace(/\n/g," ")
-    .replace(/[^A-Z0-9-]/gi," ")
-    .trim();
-
-    document.getElementById("placas")
-    .value = texto;
-
-    document.getElementById("estado")
-    .innerHTML =
-    "✅ Placas detectadas";
-
-}
-
 // GENERAR FOLIO
 function generarFolio(){
 
@@ -424,76 +386,13 @@ function generarFolio(){
 }
 
 // TICKET
-function generarTicket(){
+    // ENVIAR TICKET CLIENTE
+function enviarCliente(){
 
-    const nombre =
-    document.getElementById("nombre")
-    .value;
-
-    const telefono =
+    const telefonoCliente =
     document.getElementById("telefono")
-    .value;
-
-    const unidad =
-    document.getElementById("unidad")
-    .value;
-
-    const placas =
-    document.getElementById("placas")
-    .value;
-
-    if(nombre === "" ||
-       telefono === "" ||
-       unidad === "" ||
-       placas === ""){
-
-        alert(
-        "Completa todos los campos"
-        );
-
-        return;
-
-    }
-
-    const fecha =
-    new Date().toLocaleString();
-
-    const folio =
-    generarFolio();
-
-    document.getElementById("ticket")
-    .style.display = "block";
-
-    document.getElementById("tFolio")
-    .innerHTML = folio;
-
-    document.getElementById("tNombre")
-    .innerHTML = nombre;
-
-    document.getElementById("tTelefono")
-    .innerHTML = telefono;
-
-    document.getElementById("tUnidad")
-    .innerHTML = unidad;
-
-    document.getElementById("tPlacas")
-    .innerHTML = placas;
-
-    document.getElementById("tFecha")
-    .innerHTML = fecha;
-
-}
-
-// WHATSAPP
-function enviarWhatsApp(){
-
-    const nombre =
-    document.getElementById("nombre")
-    .value;
-
-    const telefono =
-    document.getElementById("telefono")
-    .value;
+    .value
+    .replace(/\D/g,'');
 
     const unidad =
     document.getElementById("unidad")
@@ -521,21 +420,14 @@ function enviarWhatsApp(){
 
     }
 
-    const numero =
-    "5217712343532";
-
     const mensaje =
 
-`🚗 NUEVO INGRESO PARKING %0A%0A
+`🎫 PARKING IA EXPRESS %0A%0A
+
+🚗 Registro realizado correctamente %0A%0A
 
 🎫 Folio:
 ${folio}%0A
-
-👤 Cliente:
-${nombre}%0A
-
-📞 Teléfono:
-${telefono}%0A
 
 🚘 Unidad:
 ${unidad}%0A
@@ -544,15 +436,122 @@ ${unidad}%0A
 ${placas}%0A
 
 🕒 Fecha:
-${fecha}`;
+${fecha}%0A%0A
+
+✅ Conserve este ticket`;
 
     window.open(
 
-`https://wa.me/${numero}?text=${mensaje}`,
+`https://wa.me/52${telefonoCliente}?text=${mensaje}`,
 
 "_blank"
 
 );
+
+}
+    // ENVIAR ADMIN TELEGRAM
+async function enviarAdmin(){
+
+    const nombre =
+    document.getElementById("nombre")
+    .value;
+
+    const telefono =
+    document.getElementById("telefono")
+    .value;
+
+    const unidad =
+    document.getElementById("unidad")
+    .value;
+
+    const placas =
+    document.getElementById("placas")
+    .value;
+
+    const folio =
+    document.getElementById("tFolio")
+    .innerHTML;
+
+    const fecha =
+    document.getElementById("tFecha")
+    .innerHTML;
+
+    const foto =
+    document.getElementById("foto")
+    .files[0];
+
+    if(!foto){
+
+        alert(
+        "Toma la foto primero"
+        );
+
+        return;
+
+    }
+
+    // TOKEN BOT TELEGRAM
+    const token =
+    "TU_TOKEN_BOT";
+
+    // CHAT ID ADMIN
+    const chatId =
+    "TU_CHAT_ID";
+
+    const mensaje =
+
+`🚗 NUEVO INGRESO PARKING
+
+🎫 Folio:
+${folio}
+
+👤 Cliente:
+${nombre}
+
+📞 Teléfono:
+${telefono}
+
+🚘 Unidad:
+${unidad}
+
+🔢 Placas:
+${placas}
+
+🕒 Fecha:
+${fecha}`;
+
+    const formData =
+    new FormData();
+
+    formData.append(
+    "chat_id",
+    chatId
+    );
+
+    formData.append(
+    "caption",
+    mensaje
+    );
+
+    formData.append(
+    "photo",
+    foto
+    );
+
+    await fetch(
+
+`https://api.telegram.org/bot${token}/sendPhoto`,
+
+{
+    method:"POST",
+    body:formData
+}
+
+);
+
+    alert(
+    "✅ Registro enviado al administrador"
+    );
 
 }
 
