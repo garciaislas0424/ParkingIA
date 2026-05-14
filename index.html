@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Parking IA Express</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#f3f4f6;
+    padding:20px;
+}
+
+.container{
+    max-width:750px;
+    margin:auto;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+h1{
+    text-align:center;
+    color:#111827;
+    margin-bottom:10px;
+}
+
+.sub{
+    text-align:center;
+    color:#666;
+    margin-bottom:20px;
+}
+
+.fecha{
+    text-align:center;
+    font-weight:bold;
+    margin-bottom:20px;
+    color:#444;
+}
+
+input,
+select{
+    width:100%;
+    padding:14px;
+    margin-top:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    font-size:16px;
+}
+
+button{
+    width:100%;
+    padding:15px;
+    margin-top:15px;
+    border:none;
+    border-radius:10px;
+    background:#16a34a;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#15803d;
+}
+
+.preview{
+    margin-top:20px;
+}
+
+.preview img{
+    width:100%;
+    border-radius:15px;
+    border:2px solid #ddd;
+}
+
+.estado{
+    margin-top:15px;
+    text-align:center;
+    font-weight:bold;
+    color:#16a34a;
+}
+
+.aviso{
+    margin-top:15px;
+    background:#f1f5f9;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    font-weight:bold;
+}
+
+.ticket{
+    margin-top:25px;
+    border:2px dashed #000;
+    padding:20px;
+    border-radius:10px;
+    background:#fff;
+}
+
+.ticket h2{
+    text-align:center;
+    margin-bottom:15px;
+}
+
+.ticket p{
+    margin-top:10px;
+    font-size:15px;
+}
+
+.print{
+    background:#111827;
+}
+
+@media print{
+
+    body{
+        background:white;
+    }
+
+    .no-print{
+        display:none;
+    }
+
+    .card{
+        box-shadow:none;
+        border:none;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>🚗 Parking IA Express</h1>
+
+<p class="sub">
+Registro inteligente de estacionamiento
+</p>
+
+<div class="fecha" id="fechaActual"></div>
+
+<!-- DATOS -->
+
+<input type="text"
+id="nombre"
+placeholder="Nombre del cliente">
+
+<input type="tel"
+id="telefono"
+placeholder="Número telefónico">
+
+<select id="unidad">
+
+<option value="">
+Tipo de unidad
+</option>
+
+<option>
+Carro
+</option>
+
+<option>
+Camioneta
+</option>
+
+<option>
+Moto
+</option>
+
+</select>
+
+<div class="aviso">
+📸 TOMAR FOTO FRONTAL DE PLACAS
+</div>
+
+<input
+type="file"
+accept="image/*"
+capture="environment"
+id="foto">
+
+<div class="preview">
+
+<img
+id="preview"
+style="display:none;">
+
+</div>
+
+<input type="text"
+id="placas"
+placeholder="Placas detectadas automáticamente">
+
+<div class="estado"
+id="estado"></div>
+
+<!-- BOTONES -->
+
+<button
+class="no-print"
+onclick="leerPlacas()">
+
+🔍 Escanear placas con IA
+
+</button>
+
+<button
+class="no-print"
+onclick="generarTicket()">
+
+🎫 Generar Ticket
+
+</button>
+
+<button
+class="print no-print"
+onclick="window.print()">
+
+🖨️ Imprimir Ticket
+
+</button>
+
+<button
+class="no-print"
+onclick="enviarWhatsApp()">
+
+📲 Enviar Registro WhatsApp
+
+</button>
+
+<!-- TICKET -->
+
+<div
+class="ticket"
+id="ticket"
+style="display:none;">
+
+<h2>🚗 PARKING IA EXPRESS</h2>
+
+<hr>
+
+<p><strong>FOLIO:</strong>
+<span id="tFolio"></span></p>
+
+<p><strong>CLIENTE:</strong>
+<span id="tNombre"></span></p>
+
+<p><strong>TELÉFONO:</strong>
+<span id="tTelefono"></span></p>
+
+<p><strong>UNIDAD:</strong>
+<span id="tUnidad"></span></p>
+
+<p><strong>PLACAS:</strong>
+<span id="tPlacas"></span></p>
+
+<p><strong>FECHA:</strong>
+<span id="tFecha"></span></p>
+
+<hr>
+
+<p style="text-align:center;">
+Conserve su ticket
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// FECHA
+function actualizarFecha(){
+
+    const fecha =
+    new Date().toLocaleString("es-MX",{
+
+        dateStyle:"full",
+        timeStyle:"short"
+
+    });
+
+    document.getElementById("fechaActual")
+    .innerHTML = fecha;
+
+}
+
+actualizarFecha();
+
+// FOTO
+const foto =
+document.getElementById("foto");
+
+foto.addEventListener("change",function(){
+
+    const archivo =
+    this.files[0];
+
+    if(archivo){
+
+        const reader =
+        new FileReader();
+
+        reader.onload = function(e){
+
+            const preview =
+            document.getElementById("preview");
+
+            preview.src =
+            e.target.result;
+
+            preview.style.display =
+            "block";
+
+        }
+
+        reader.readAsDataURL(archivo);
+
+    }
+
+});
+
+// IA OCR
+async function leerPlacas(){
+
+    const archivo =
+    foto.files[0];
+
+    if(!archivo){
+
+        alert(
+        "Toma una foto primero"
+        );
+
+        return;
+
+    }
+
+    document.getElementById("estado")
+    .innerHTML =
+    "Escaneando placas...";
+
+    const result =
+    await Tesseract.recognize(
+    archivo,
+    'eng'
+    );
+
+    let texto =
+    result.data.text;
+
+    texto = texto
+    .replace(/\n/g," ")
+    .replace(/[^A-Z0-9-]/gi," ")
+    .trim();
+
+    document.getElementById("placas")
+    .value = texto;
+
+    document.getElementById("estado")
+    .innerHTML =
+    "✅ Placas detectadas";
+
+}
+
+// GENERAR FOLIO
+function generarFolio(){
+
+    const ahora =
+    new Date();
+
+    return "PK-" +
+
+    ahora.getFullYear() +
+
+    (ahora.getMonth()+1)
+    .toString()
+    .padStart(2,"0") +
+
+    ahora.getDate()
+    .toString()
+    .padStart(2,"0") +
+
+    "-" +
+
+    ahora.getHours()
+    .toString()
+    .padStart(2,"0") +
+
+    ahora.getMinutes()
+    .toString()
+    .padStart(2,"0") +
+
+    ahora.getSeconds()
+    .toString()
+    .padStart(2,"0");
+
+}
+
+// TICKET
+function generarTicket(){
+
+    const nombre =
+    document.getElementById("nombre")
+    .value;
+
+    const telefono =
+    document.getElementById("telefono")
+    .value;
+
+    const unidad =
+    document.getElementById("unidad")
+    .value;
+
+    const placas =
+    document.getElementById("placas")
+    .value;
+
+    if(nombre === "" ||
+       telefono === "" ||
+       unidad === "" ||
+       placas === ""){
+
+        alert(
+        "Completa todos los campos"
+        );
+
+        return;
+
+    }
+
+    const fecha =
+    new Date().toLocaleString();
+
+    const folio =
+    generarFolio();
+
+    document.getElementById("ticket")
+    .style.display = "block";
+
+    document.getElementById("tFolio")
+    .innerHTML = folio;
+
+    document.getElementById("tNombre")
+    .innerHTML = nombre;
+
+    document.getElementById("tTelefono")
+    .innerHTML = telefono;
+
+    document.getElementById("tUnidad")
+    .innerHTML = unidad;
+
+    document.getElementById("tPlacas")
+    .innerHTML = placas;
+
+    document.getElementById("tFecha")
+    .innerHTML = fecha;
+
+}
+
+// WHATSAPP
+function enviarWhatsApp(){
+
+    const nombre =
+    document.getElementById("nombre")
+    .value;
+
+    const telefono =
+    document.getElementById("telefono")
+    .value;
+
+    const unidad =
+    document.getElementById("unidad")
+    .value;
+
+    const placas =
+    document.getElementById("placas")
+    .value;
+
+    const folio =
+    document.getElementById("tFolio")
+    .innerHTML;
+
+    const fecha =
+    document.getElementById("tFecha")
+    .innerHTML;
+
+    if(folio === ""){
+
+        alert(
+        "Primero genera el ticket"
+        );
+
+        return;
+
+    }
+
+    const numero =
+    "5217712343532";
+
+    const mensaje =
+
+`🚗 NUEVO INGRESO PARKING %0A%0A
+
+🎫 Folio:
+${folio}%0A
+
+👤 Cliente:
+${nombre}%0A
+
+📞 Teléfono:
+${telefono}%0A
+
+🚘 Unidad:
+${unidad}%0A
+
+🔢 Placas:
+${placas}%0A
+
+🕒 Fecha:
+${fecha}`;
+
+    window.open(
+
+`https://wa.me/${numero}?text=${mensaje}`,
+
+"_blank"
+
+);
+
+}
+
+</script>
+
+</body>
+</html>
