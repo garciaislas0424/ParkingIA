@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -256,9 +256,31 @@ onclick="enviarWhatsApp()">
 📲 Enviar Registro WhatsApp
 
 </button>
+    
+<button
+class="no-print"
+onclick="generarQRPagina()">
 
+📱 Generar QR Página
+
+</button>
 <!-- TICKET -->
+    
+<div
+id="qrContainer"
+style="
+margin-top:20px;
+text-align:center;
+display:none;
+">
 
+<h3>
+📱 QR de Acceso
+</h3>
+
+<canvas id="qrCanvas"></canvas>
+
+</div>
 <div
 class="ticket"
 id="ticket"
